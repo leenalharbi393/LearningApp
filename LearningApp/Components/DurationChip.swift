@@ -1,18 +1,34 @@
-//
-//  DurationChip.swift
-//  LearningApp
-//
-//  Created by Leen Alharbi on 02/06/1448 AH.
-//
-
 import SwiftUI
 
+/// A single Week / Month / Year pill.
+/// It doesn't own its selection: the parent tells it, and it reports taps back.
 struct DurationChip: View {
+    let duration: GoalDuration
+    let isSelected: Bool
+    let onTap: () -> Void
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        Button(action: onTap) {
+            Text(duration.title)
+                .font(.subheadline)
+                .foregroundStyle(isSelected ? .white : .secondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(
+            isSelected ? .regular.tint(.orange).interactive() : .regular.interactive(),
+            in: .capsule
+        )
     }
 }
 
 #Preview {
-    DurationChip()
+    HStack {
+        DurationChip(duration: .week, isSelected: true) {}
+        DurationChip(duration: .month, isSelected: false) {}
+        DurationChip(duration: .year, isSelected: false) {}
+    }
+    .padding()
+    .preferredColorScheme(.dark)
 }
