@@ -8,7 +8,7 @@ import SwiftUI
 
 /// First-launch screen: the user sets what to learn and for how long.
 struct OnboardingView: View {
-    @State private var viewModel = OnboardingViewModel()
+    @State private var viewModel = GoalEditorViewModel()
     let onStart: (LearningGoal) -> Void
 
     var body: some View {
@@ -40,7 +40,7 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.glassProminent)
                 .tint(.orange)
-                .disabled(!viewModel.canStart)
+                .disabled(!viewModel.canSave)
 
                 Text("You can edit your desire later")
                     .font(.caption2)
