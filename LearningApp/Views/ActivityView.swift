@@ -44,6 +44,8 @@ struct ActivityView: View {
                     Menu {
                         Button("+1 day") { viewModel.debugTimeTravel(hours: 24) }
                         Button("+33 hours") { viewModel.debugTimeTravel(hours: 33) }
+                        Button("Reset all data", role: .destructive) { viewModel.debugReset() }
+                    
                     } label: {
                         Image(systemName: "ladybug")
                     }
@@ -126,7 +128,7 @@ struct ActivityView: View {
 // MARK: - Previews (one per state)
 
 #Preview("Default") {
-    let viewModel = ActivityViewModel()
+    let viewModel = ActivityViewModel(store: nil)
     viewModel.startGoal(LearningGoal(topic: "Swift", duration: .week))
     return ActivityView()
         .environment(viewModel)
@@ -134,7 +136,7 @@ struct ActivityView: View {
 }
 
 #Preview("Learned today") {
-    let viewModel = ActivityViewModel()
+    let viewModel = ActivityViewModel(store: nil)
     viewModel.startGoal(LearningGoal(topic: "Swift", duration: .week))
     viewModel.logLearned()
     return ActivityView()
@@ -143,7 +145,7 @@ struct ActivityView: View {
 }
 
 #Preview("Freezed today") {
-    let viewModel = ActivityViewModel()
+    let viewModel = ActivityViewModel(store: nil)
     viewModel.startGoal(LearningGoal(topic: "Swift", duration: .week))
     viewModel.logFreeze()
     return ActivityView()

@@ -25,7 +25,25 @@ final class ActivityViewModel {
 
     /// No activity for longer than this resets the streak.
     private let streakTimeLimit: TimeInterval = 32 * 60 * 60
+    
+    
+    /// Where data is saved. nil = don't save (used by previews).
+    private let store: DataStore?
 
+    // MARK: - Init
+
+    init(store: DataStore? = DataStore()) {
+        self.store = store
+        if let saved = store?.load() {
+            goal = saved.goal
+            logs = saved.logs
+            lastLoggedAt = saved.lastLoggedAt
+            streakStart = saved.streakStart
+        }
+    }
+    //I ADDED
+    
+    
     // MARK: - Today
 
     /// .learned, .freezed, or nil if nothing is logged today yet.
@@ -73,6 +91,7 @@ final class ActivityViewModel {
         streakStart = newGoal.startDate
         lastLoggedAt = nil
         now = Date()
+        save()
     }
 
     func logLearned() {
@@ -132,6 +151,7 @@ final class ActivityViewModel {
     private func record(_ status: DayStatus) {
         logs.append(DayLog(date: now, status: status))
         lastLoggedAt = now
+        save()
     }
 
     /// The 32-hour rule.
@@ -140,6 +160,7 @@ final class ActivityViewModel {
         let lastActivity = max(lastLoggedAt ?? streakStart, streakStart)
         if now.timeIntervalSince(lastActivity) > streakTimeLimit {
             streakStart = now
+            save()
         }
     }
 
@@ -149,12 +170,31 @@ final class ActivityViewModel {
         return logs.filter { $0.status == status && $0.date >= startDay }.count
     }
 
+    /// Writes the current state to the device.
+    private func save() {
+        store?.save(AppData(
+            goal: goal,
+            logs: logs,
+            lastLoggedAt: lastLoggedAt,
+            streakStart: streakStart
+        ))
+    }
+    
     // MARK: - Debug (only exists in test builds)
 
     #if DEBUG
     /// Jumps the app's clock forward, to test multi-day rules without waiting.
     func debugTimeTravel(hours: Double) {
         refresh(at: now.addingTimeInterval(hours * 60 * 60))
+    }
+    /// Erases everything and returns to onboarding.
+    func debugReset() {
+        goal = nil
+        logs = []
+        lastLoggedAt = nil
+        streakStart = Date()
+        now = Date()
+        save()
     }
     #endif
 }
