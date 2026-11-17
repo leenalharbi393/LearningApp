@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The main screen: today's date, this week's progress, and the two stat cards.
+/// The main screen: today's date, this week's progress, the stat cards,
+/// and the two actions: log today as learned, or freeze it.
 struct ActivityView: View {
     @Environment(ActivityViewModel.self) private var viewModel
 
@@ -17,8 +18,14 @@ struct ActivityView: View {
                 }
 
                 Spacer()
+                logButton
+                Spacer()
+
+                freezeSection
+                    .padding(.bottom, 24)
             }
             .padding(.horizontal)
+            .animation(.default, value: viewModel.todayStatus)
             .navigationTitle("Activity")
             .navigationSubtitle(viewModel.todayText)
             .toolbar {
@@ -32,6 +39,8 @@ struct ActivityView: View {
             }
         }
     }
+
+    // MARK: - Week strip
 
     /// S M T W T F S with a DayCircle under each letter.
     private var weekStrip: some View {
@@ -51,13 +60,71 @@ struct ActivityView: View {
             }
         }
     }
+
+    // MARK: - Big circle
+
+    private var logButton: some View {
+        Button {
+            viewModel.logLearned()
+        } label: {
+            Text(viewModel.todayStatus == .learned ? "Logged as Learned" : "Log as Learned")
+                .font(.title3.bold())
+                .foregroundStyle(viewModel.canLogLearned ? .white : .secondary)
+                .frame(width: 274, height: 274)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(
+            viewModel.canLogLearned ? .regular.tint(.learnOrange).interactive() : .regular,
+            in: .circle
+        )
+        .disabled(!viewModel.canLogLearned)
+    }
+
+    // MARK: - Freeze button + counter
+
+    private var freezeSection: some View {
+        VStack(spacing: 12) {
+            Button {
+                viewModel.logFreeze()
+            } label: {
+                Text(viewModel.canFreeze ? "Freeze for a day" : "Freezed for a day")
+                    .font(.subheadline.weight(.medium))
+                    .frame(width: 274, height: 48)
+            }
+            .buttonStyle(.glassProminent)
+            .tint(.freezeBlue)
+            .disabled(!viewModel.canFreeze)
+
+            Text("\(viewModel.freezesUsed) out of \(viewModel.freezeLimit) Freezes used")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
 }
 
-#Preview {
+// MARK: - Previews (one per state)
+
+#Preview("Default") {
+    let viewModel = ActivityViewModel()
+    viewModel.startGoal(LearningGoal(topic: "Swift", duration: .week))
+    return ActivityView()
+        .environment(viewModel)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Learned today") {
     let viewModel = ActivityViewModel()
     viewModel.startGoal(LearningGoal(topic: "Swift", duration: .week))
     viewModel.logLearned()
+    return ActivityView()
+        .environment(viewModel)
+        .preferredColorScheme(.dark)
+}
 
+#Preview("Freezed today") {
+    let viewModel = ActivityViewModel()
+    viewModel.startGoal(LearningGoal(topic: "Swift", duration: .week))
+    viewModel.logFreeze()
     return ActivityView()
         .environment(viewModel)
         .preferredColorScheme(.dark)
