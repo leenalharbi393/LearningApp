@@ -1,40 +1,64 @@
-//
-//  ActivityView.swift
-//  LearningApp
-//
-//  Created by Leen Alharbi on 06/06/1448 AH.
-//
 import SwiftUI
 
-/// TEMPORARY test screen: shows the ViewModel's data so we can test the logic.
-/// We'll replace this with the real design in step D.
+/// The main screen: today's date, this week's progress, and the two stat cards.
 struct ActivityView: View {
     @Environment(ActivityViewModel.self) private var viewModel
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Learning: \(viewModel.goal?.topic ?? "-")")
-                .font(.title2.bold())
+        NavigationStack {
+            VStack(spacing: 16) {
+                weekStrip
 
-            Text("Today: \(viewModel.todayStatus?.rawValue ?? "not logged")")
-            Text("Learned: \(viewModel.learnedCount)")
-            Text("Freezes: \(viewModel.freezesUsed) / \(viewModel.freezeLimit)")
+                HStack(spacing: 12) {
+                    StatCard(icon: "flame.fill", color: .learnOrange,
+                             count: viewModel.learnedCount, label: "Learned")
+                    StatCard(icon: "snowflake", color: .freezeBlue,
+                             count: viewModel.freezesUsed, label: "Freezed")
+                }
 
-            Button("Log as Learned") { viewModel.logLearned() }
-                .buttonStyle(.glassProminent)
-                .tint(.orange)
-                .disabled(!viewModel.canLogLearned)
+                Spacer()
+            }
+            .padding(.horizontal)
+            .navigationTitle("Activity")
+            .navigationSubtitle(viewModel.todayText)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { } label: { Image(systemName: "calendar") }
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { } label: { Image(systemName: "pencil.and.outline") }
+                }
+            }
+        }
+    }
 
-            Button("Freeze for a day") { viewModel.logFreeze() }
-                .buttonStyle(.glassProminent)
-                .tint(.cyan)
-                .disabled(!viewModel.canFreeze)
+    /// S M T W T F S with a DayCircle under each letter.
+    private var weekStrip: some View {
+        HStack {
+            ForEach(viewModel.currentWeek, id: \.self) { date in
+                VStack(spacing: 6) {
+                    Text(viewModel.weekdayLetter(of: date))
+                        .font(.caption2.weight(.semibold))
+
+                    DayCircle(
+                        day: viewModel.dayNumber(of: date),
+                        status: viewModel.status(for: date),
+                        isToday: viewModel.isToday(date)
+                    )
+                }
+                .frame(maxWidth: .infinity)
+            }
         }
     }
 }
 
 #Preview {
-    ActivityView()
-        .environment(ActivityViewModel())
+    let viewModel = ActivityViewModel()
+    viewModel.startGoal(LearningGoal(topic: "Swift", duration: .week))
+    viewModel.logLearned()
+
+    return ActivityView()
+        .environment(viewModel)
         .preferredColorScheme(.dark)
 }

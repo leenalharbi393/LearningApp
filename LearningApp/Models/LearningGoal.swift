@@ -20,6 +20,6 @@ struct LearningGoal: Codable, Equatable {
         case .month: component = .month
         case .year:  component = .year
         }
-        return Calendar.current.date(byAdding: component, value: 1, to: startDate) ?? startDate
+        return Calendar.app.date(byAdding: component, value: 1, to: startDate) ?? startDate
     }
 }

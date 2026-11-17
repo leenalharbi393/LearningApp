@@ -15,7 +15,7 @@ struct DayLog: Codable, Identifiable, Equatable {
     var id: Date { date }
 
     init(date: Date, status: DayStatus) {
-        self.date = Calendar.current.startOfDay(for: date)
+        self.date = Calendar.app.startOfDay(for: date)
         self.status = status
     }
 }

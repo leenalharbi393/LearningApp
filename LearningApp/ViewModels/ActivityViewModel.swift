@@ -29,7 +29,7 @@ final class ActivityViewModel {
 
     /// What happened on a given day, or nil if nothing was logged.
     func status(for date: Date) -> DayStatus? {
-        logs.first { Calendar.current.isDate($0.date, inSameDayAs: date) }?.status
+        logs.first { Calendar.app.isDate($0.date, inSameDayAs: date) }?.status
     }
 
     // MARK: - Counts (the two stat cards)
@@ -68,12 +68,47 @@ final class ActivityViewModel {
         logs.append(DayLog(date: Date(), status: .freezed))
     }
 
+    
+    // MARK: - Display
+
+    /// "Thursday, 24 October"
+    var todayText: String {
+        let formatter = DateFormatter()
+        formatter.calendar = .app
+        formatter.locale = Calendar.app.locale
+        formatter.dateFormat = "EEEE, d MMMM"
+        return formatter.string(from: Date())
+    }
+
+    /// The 7 dates of the current week, Sunday to Saturday.
+    var currentWeek: [Date] {
+        let calendar = Calendar.app
+        let today = calendar.startOfDay(for: Date())
+        let weekday = calendar.component(.weekday, from: today)   // 1 = Sunday … 7 = Saturday
+        let sunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: today) ?? today
+        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: sunday) }
+    }
+
+    func dayNumber(of date: Date) -> Int {
+        Calendar.app.component(.day, from: date)
+    }
+
+    /// "S", "M", "T"…
+    func weekdayLetter(of date: Date) -> String {
+        let weekday = Calendar.app.component(.weekday, from: date)
+        return Calendar.app.veryShortWeekdaySymbols[weekday - 1]
+    }
+
+    func isToday(_ date: Date) -> Bool {
+        Calendar.app.isDateInToday(date)
+    }
+    
     // MARK: - Helpers
 
     /// Counts logs of one status since the current goal started.
     private func count(of status: DayStatus) -> Int {
         guard let goal else { return 0 }
-        let start = Calendar.current.startOfDay(for: goal.startDate)
+        let start = Calendar.app.startOfDay(for: goal.startDate)
         return logs.filter { $0.status == status && $0.date >= start }.count
     }
 }
