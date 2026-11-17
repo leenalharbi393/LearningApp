@@ -1,9 +1,3 @@
-//
-//  ActivityViewModel.swift
-//  LearningApp
-//
-//  Created by Leen Alharbi on 05/06/1448 AH.
-//
 import Foundation
 import Observation
 
@@ -20,11 +14,23 @@ final class ActivityViewModel {
     /// Every day the user has logged, across all goals.
     private(set) var logs: [DayLog] = []
 
+    /// The app's idea of "now". Every time-based rule uses this, never Date() directly.
+    private(set) var now: Date = Date()
+
+    /// The exact moment of the last Learned or Freeze (nil = nothing logged yet).
+    private(set) var lastLoggedAt: Date?
+
+    /// When the current streak began: the goal's start, or the last reset.
+    private(set) var streakStart: Date = Date()
+
+    /// No activity for longer than this resets the streak.
+    private let streakTimeLimit: TimeInterval = 32 * 60 * 60
+
     // MARK: - Today
 
     /// .learned, .freezed, or nil if nothing is logged today yet.
     var todayStatus: DayStatus? {
-        status(for: Date())
+        status(for: now)
     }
 
     /// What happened on a given day, or nil if nothing was logged.
@@ -34,8 +40,16 @@ final class ActivityViewModel {
 
     // MARK: - Counts (the two stat cards)
 
-    var learnedCount: Int { count(of: .learned) }
-    var freezesUsed: Int { count(of: .freezed) }
+    /// Learned days in the current streak.
+    var learnedCount: Int {
+        count(of: .learned, since: streakStart)
+    }
+
+    /// Freezes used during the current goal.
+    var freezesUsed: Int {
+        guard let goal else { return 0 }
+        return count(of: .freezed, since: goal.startDate)
+    }
 
     /// 2 / 8 / 96 depending on the goal's duration (0 if there's no goal).
     var freezeLimit: Int {
@@ -56,19 +70,28 @@ final class ActivityViewModel {
 
     func startGoal(_ newGoal: LearningGoal) {
         goal = newGoal
+        streakStart = newGoal.startDate
+        lastLoggedAt = nil
+        now = Date()
     }
 
     func logLearned() {
         guard canLogLearned else { return }
-        logs.append(DayLog(date: Date(), status: .learned))
+        record(.learned)
     }
 
     func logFreeze() {
         guard canFreeze else { return }
-        logs.append(DayLog(date: Date(), status: .freezed))
+        record(.freezed)
     }
 
-    
+    /// Re-reads the clock and applies the time rules.
+    /// Called when the screen appears, when the app returns, and at midnight.
+    func refresh(at date: Date = Date()) {
+        now = date
+        resetStreakIfNeeded()
+    }
+
     // MARK: - Display
 
     /// "Thursday, 24 October"
@@ -77,13 +100,13 @@ final class ActivityViewModel {
         formatter.calendar = .app
         formatter.locale = Calendar.app.locale
         formatter.dateFormat = "EEEE, d MMMM"
-        return formatter.string(from: Date())
+        return formatter.string(from: now)
     }
 
     /// The 7 dates of the current week, Sunday to Saturday.
     var currentWeek: [Date] {
         let calendar = Calendar.app
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: now)
         let weekday = calendar.component(.weekday, from: today)   // 1 = Sunday … 7 = Saturday
         let sunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: today) ?? today
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: sunday) }
@@ -100,15 +123,38 @@ final class ActivityViewModel {
     }
 
     func isToday(_ date: Date) -> Bool {
-        Calendar.app.isDateInToday(date)
+        Calendar.app.isDate(date, inSameDayAs: now)
     }
-    
+
     // MARK: - Helpers
 
-    /// Counts logs of one status since the current goal started.
-    private func count(of status: DayStatus) -> Int {
-        guard let goal else { return 0 }
-        let start = Calendar.app.startOfDay(for: goal.startDate)
-        return logs.filter { $0.status == status && $0.date >= start }.count
+    /// Saves today's log and remembers the exact moment it happened.
+    private func record(_ status: DayStatus) {
+        logs.append(DayLog(date: now, status: status))
+        lastLoggedAt = now
     }
+
+    /// The 32-hour rule.
+    private func resetStreakIfNeeded() {
+        guard goal != nil else { return }
+        let lastActivity = max(lastLoggedAt ?? streakStart, streakStart)
+        if now.timeIntervalSince(lastActivity) > streakTimeLimit {
+            streakStart = now
+        }
+    }
+
+    /// Counts logs of one status from a starting day onward.
+    private func count(of status: DayStatus, since start: Date) -> Int {
+        let startDay = Calendar.app.startOfDay(for: start)
+        return logs.filter { $0.status == status && $0.date >= startDay }.count
+    }
+
+    // MARK: - Debug (only exists in test builds)
+
+    #if DEBUG
+    /// Jumps the app's clock forward, to test multi-day rules without waiting.
+    func debugTimeTravel(hours: Double) {
+        refresh(at: now.addingTimeInterval(hours * 60 * 60))
+    }
+    #endif
 }
