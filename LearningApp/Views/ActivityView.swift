@@ -18,15 +18,32 @@ struct ActivityView: View {
                              count: viewModel.freezesUsed, label: "Freezed")
                 }
 
-                Spacer()
-                logButton
-                Spacer()
-
-                freezeSection
-                    .padding(.bottom, 24)
+                switch viewModel.goalState {
+                case .inProgress:
+                    Spacer()
+                    logButton
+                    Spacer()
+                    freezeSection
+                        .padding(.bottom, 24)
+                case .completed:
+                    goalEndedSection(
+                        icon: "hands.clap.fill",
+                        title: "Well done!",
+                        subtitle: "Ready for your next goal?"
+                    )
+                    Spacer()
+                case .notMet:
+                    goalEndedSection(
+                        icon: "xmark.seal",
+                        title: "You didn't reach your goal this time.",
+                        subtitle: "Want to set another goal?"
+                    )
+                    Spacer()
+                }
             }
             .padding(.horizontal)
             .animation(.default, value: viewModel.todayStatus)
+            .animation(.default, value: viewModel.goalState)
             //
             .onChange(of: scenePhase, initial: true) { _, phase in
                 if phase == .active {
@@ -127,6 +144,40 @@ struct ActivityView: View {
                 .foregroundStyle(.secondary)
         }
     }
+    
+    // MARK: - Goal ended (completed / not met)
+
+    private func goalEndedSection(icon: String, title: String, subtitle: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 40))
+                .foregroundStyle(Color.learnOrange)
+                .padding(.bottom, 8)
+
+            Text(title)
+                .font(.headline)
+
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            NavigationLink {
+                LearningGoalView(
+                    editor: GoalEditorViewModel(editing: viewModel.goal, allowSameGoal: true),
+                    confirmBeforeSaving: false
+                )
+            } label: {
+                Label("Set a goal", systemImage: "pencil.and.outline")
+            }
+            .buttonStyle(.glassProminent)
+            .tint(.learnOrange)
+            .padding(.top, 24)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 48)
+    }
+    
+    
 }
 
 // MARK: - Previews (one per state)
