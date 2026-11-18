@@ -45,6 +45,7 @@ struct ActivityView: View {
                         Button("+1 day") { viewModel.debugTimeTravel(hours: 24) }
                         Button("+33 hours") { viewModel.debugTimeTravel(hours: 33) }
                         Button("Reset all data", role: .destructive) { viewModel.debugReset() }
+                        Button("+30 days") { viewModel.debugTimeTravel(hours: 24 * 30) }
                     
                     } label: {
                         Image(systemName: "ladybug")
@@ -53,7 +54,11 @@ struct ActivityView: View {
                 #endif
                 //I ADDED
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { } label: { Image(systemName: "calendar") }
+                    NavigationLink {
+                        CalendarView()
+                    } label: {
+                        Image(systemName: "calendar")
+                    }
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
