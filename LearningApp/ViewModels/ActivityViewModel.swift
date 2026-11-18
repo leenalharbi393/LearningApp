@@ -29,6 +29,14 @@ final class ActivityViewModel {
     
     /// Where data is saved. nil = don't save (used by previews).
     private let store: DataStore?
+    
+    /// Debug time travel, in seconds (always 0 in normal use).
+    private var timeOffset: TimeInterval = 0
+
+    /// The real time right now, plus any debug time travel.
+    private var currentTime: Date {
+        Date().addingTimeInterval(timeOffset)
+    }
 
     // MARK: - Init
 
@@ -87,27 +95,29 @@ final class ActivityViewModel {
     // MARK: - Actions
 
     func startGoal(_ newGoal: LearningGoal) {
+        now = currentTime
         goal = newGoal
-        streakStart = newGoal.startDate
+        streakStart = now
         lastLoggedAt = nil
-        now = Date()
         save()
     }
 
     func logLearned() {
+        refresh()
         guard canLogLearned else { return }
         record(.learned)
     }
 
     func logFreeze() {
+        refresh()
         guard canFreeze else { return }
         record(.freezed)
     }
 
-    /// Re-reads the clock and applies the time rules.
-    /// Called when the screen appears, when the app returns, and at midnight.
-    func refresh(at date: Date = Date()) {
-        now = date
+    /// Reads a fresh time and applies the time rules.
+    /// Called on every action, when the screen appears, when the app returns, and at midnight.
+    func refresh() {
+        now = currentTime
         resetStreakIfNeeded()
     }
 
@@ -149,7 +159,7 @@ final class ActivityViewModel {
 
     /// Saves today's log and remembers the exact moment it happened.
     private func record(_ status: DayStatus) {
-        logs.append(DayLog(date: now, status: status))
+        logs.append(DayLog(loggedAt: now, status: status))
         lastLoggedAt = now
         save()
     }
@@ -164,12 +174,11 @@ final class ActivityViewModel {
         }
     }
 
-    /// Counts logs of one status from a starting day onward.
+    /// Counts logs of one status made at or after an exact moment.
     private func count(of status: DayStatus, since start: Date) -> Int {
-        let startDay = Calendar.app.startOfDay(for: start)
-        return logs.filter { $0.status == status && $0.date >= startDay }.count
+        logs.filter { $0.status == status && $0.loggedAt >= start }.count
     }
-
+    
     /// Writes the current state to the device.
     private func save() {
         store?.save(AppData(
@@ -183,12 +192,15 @@ final class ActivityViewModel {
     // MARK: - Debug (only exists in test builds)
 
     #if DEBUG
-    /// Jumps the app's clock forward, to test multi-day rules without waiting.
+    /// Moves the app's clock forward, to test multi-day rules without waiting.
     func debugTimeTravel(hours: Double) {
-        refresh(at: now.addingTimeInterval(hours * 60 * 60))
+        timeOffset += hours * 60 * 60
+        refresh()
     }
-    /// Erases everything and returns to onboarding.
+
+    /// Erases everything, cancels time travel, and returns to onboarding.
     func debugReset() {
+        timeOffset = 0
         goal = nil
         logs = []
         lastLoggedAt = nil

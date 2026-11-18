@@ -57,7 +57,11 @@ struct ActivityView: View {
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { } label: { Image(systemName: "pencil.and.outline") }
+                    NavigationLink {
+                        LearningGoalView(editor: GoalEditorViewModel(editing: viewModel.goal))
+                    } label: {
+                        Image(systemName: "pencil.and.outline")
+                    }
                 }
             }
         }
