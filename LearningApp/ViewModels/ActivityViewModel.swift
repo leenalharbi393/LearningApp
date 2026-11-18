@@ -46,7 +46,6 @@ final class ActivityViewModel {
             streakStart = saved.streakStart
         }
     }
-    //I ADDED
     
     
     // MARK: - Today

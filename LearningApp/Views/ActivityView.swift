@@ -4,7 +4,7 @@ import SwiftUI
 /// and the two actions: log today as learned, or freeze it.
 struct ActivityView: View {
     @Environment(ActivityViewModel.self) private var viewModel
-    @Environment(\.scenePhase) private var scenePhase //I ADDED
+    @Environment(\.scenePhase) private var scenePhase 
     
     var body: some View {
         NavigationStack {
@@ -44,7 +44,7 @@ struct ActivityView: View {
             .padding(.horizontal)
             .animation(.default, value: viewModel.todayStatus)
             .animation(.default, value: viewModel.goalState)
-            //
+            
             .onChange(of: scenePhase, initial: true) { _, phase in
                 if phase == .active {
                     viewModel.refresh()
@@ -52,7 +52,7 @@ struct ActivityView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
                 viewModel.refresh()
-            }//I ADDED
+            }
             .navigationTitle("Activity")
             .navigationSubtitle(viewModel.todayText)
             .toolbar {
