@@ -7,26 +7,28 @@ import Observation
 final class GoalEditorViewModel {
     var topic: String
     var duration: GoalDuration
-
     /// The goal being edited, or nil when creating the first goal.
-    private let originalGoal: LearningGoal?
+        private let originalGoal: LearningGoal?
+    /// When true, saving is allowed even if nothing changed (after a goal ends).
+        private let allowSameGoal: Bool
 
-    init(editing goal: LearningGoal? = nil) {
-        originalGoal = goal
-        topic = goal?.topic ?? ""
-        duration = goal?.duration ?? .week
-    }
+        init(editing goal: LearningGoal? = nil, allowSameGoal: Bool = false) {
+            originalGoal = goal
+            self.allowSameGoal = allowSameGoal
+            topic = goal?.topic ?? ""
+            duration = goal?.duration ?? .week
+        }
 
     /// The topic isn't blank.
     var isValid: Bool {
         !trimmedTopic.isEmpty
     }
 
-    /// When editing: did the user change anything? When creating: always true.
-    var hasChanges: Bool {
-        guard let originalGoal else { return true }
-        return trimmedTopic != originalGoal.topic || duration != originalGoal.duration
-    }
+    /// Creating, or the same goal is allowed: always true. Editing: did anything change?
+        var hasChanges: Bool {
+            guard let originalGoal, !allowSameGoal else { return true }
+            return trimmedTopic != originalGoal.topic || duration != originalGoal.duration
+        }
 
     /// Whether the main button (Start Learning / ✓) is allowed.
     var canSave: Bool {

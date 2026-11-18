@@ -85,18 +85,39 @@ final class ActivityViewModel {
     // MARK: - What the buttons are allowed to do
 
     var canLogLearned: Bool {
-        goal != nil && todayStatus == nil
+        goal != nil && goalState == .inProgress && todayStatus == nil
     }
-
+    
     var canFreeze: Bool {
         canLogLearned && freezesUsed < freezeLimit
     }
+    // MARK: - Goal state
 
+    var goalState: GoalState {
+        guard let goal else { return .inProgress }
+
+        if learnedCount + freezesUsed >= goal.totalDays {
+            return .completed
+        }
+        if isGoalPeriodOver(goal) {
+            return .notMet
+        }
+        return .inProgress
+    }
+
+    /// True once today is on or after the goal's end day.
+    private func isGoalPeriodOver(_ goal: LearningGoal) -> Bool {
+        let calendar = Calendar.app
+        return calendar.startOfDay(for: now) >= calendar.startOfDay(for: goal.endDate)
+    }
+    
     // MARK: - Actions
 
     func startGoal(_ newGoal: LearningGoal) {
         now = currentTime
-        goal = newGoal
+        var started = newGoal
+        started.startDate = now
+        goal = started
         streakStart = now
         lastLoggedAt = nil
         save()
