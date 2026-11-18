@@ -30,12 +30,9 @@ final class ActivityViewModel {
     /// Where data is saved. nil = don't save (used by previews).
     private let store: DataStore?
     
-    /// Debug time travel, in seconds (always 0 in normal use).
-    private var timeOffset: TimeInterval = 0
-
-    /// The real time right now, plus any debug time travel.
+    /// The real time right now.
     private var currentTime: Date {
-        Date().addingTimeInterval(timeOffset)
+        Date()
     }
 
     // MARK: - Init
@@ -210,24 +207,5 @@ final class ActivityViewModel {
         ))
     }
     
-    // MARK: - Debug (only exists in test builds)
-
-    #if DEBUG
-    /// Moves the app's clock forward, to test multi-day rules without waiting.
-    func debugTimeTravel(hours: Double) {
-        timeOffset += hours * 60 * 60
-        refresh()
-    }
-
-    /// Erases everything, cancels time travel, and returns to onboarding.
-    func debugReset() {
-        timeOffset = 0
-        goal = nil
-        logs = []
-        lastLoggedAt = nil
-        streakStart = Date()
-        now = Date()
-        save()
-    }
-    #endif
+    
 }

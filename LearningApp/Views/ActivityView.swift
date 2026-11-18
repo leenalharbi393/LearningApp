@@ -55,21 +55,7 @@ struct ActivityView: View {
             }//I ADDED
             .navigationTitle("Activity")
             .navigationSubtitle(viewModel.todayText)
-            .toolbar {//
-                #if DEBUG
-                ToolbarItem(placement: .topBarLeading) {
-                    Menu {
-                        Button("+1 day") { viewModel.debugTimeTravel(hours: 24) }
-                        Button("+33 hours") { viewModel.debugTimeTravel(hours: 33) }
-                        Button("Reset all data", role: .destructive) { viewModel.debugReset() }
-                        Button("+30 days") { viewModel.debugTimeTravel(hours: 24 * 30) }
-                    
-                    } label: {
-                        Image(systemName: "ladybug")
-                    }
-                }
-                #endif
-                //I ADDED
+            .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         CalendarView()

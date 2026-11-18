@@ -56,14 +56,9 @@ struct CalendarView: View {
         }
     }
 }
-
 #Preview {
     let viewModel = ActivityViewModel(store: nil)
     viewModel.startGoal(LearningGoal(topic: "Swift", duration: .month))
-    viewModel.logLearned()
-    viewModel.debugTimeTravel(hours: 24)
-    viewModel.logFreeze()
-    viewModel.debugTimeTravel(hours: 24)
     viewModel.logLearned()
 
     return NavigationStack {
